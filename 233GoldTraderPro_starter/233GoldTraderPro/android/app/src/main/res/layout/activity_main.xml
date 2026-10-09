@@ -1,0 +1,28 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F3F6FA">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp">
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="233 GOLD TRADER PRO" android:textColor="#102A43" android:textSize="24sp" android:textStyle="bold" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="DEMO CONTROL PANEL · XAUUSD" android:textColor="#0F766E" android:textStyle="bold" android:paddingTop="5dp" android:paddingBottom="18dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Connection status: Not connected" android:textSize="16sp" android:textColor="#9A3412" android:background="#FFEDD5" android:padding="14dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Select one demo broker" android:textStyle="bold" android:textSize="18sp" android:textColor="#102A43" android:paddingTop="20dp" />
+        <RadioGroup android:id="@+id/brokerGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <RadioButton android:id="@+id/derivRadio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Deriv" android:checked="true" />
+            <RadioButton android:id="@+id/exnessRadio" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Exness" />
+        </RadioGroup>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Account overview" android:textStyle="bold" android:textSize="18sp" android:textColor="#102A43" android:paddingTop="14dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Balance\n—" android:textSize="16sp" android:padding="14dp" android:background="#FFFFFF" />
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Equity\n—" android:textSize="16sp" android:padding="14dp" android:background="#FFFFFF" />
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Risk controls" android:textStyle="bold" android:textSize="18sp" android:textColor="#102A43" android:paddingTop="20dp" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Lot size (demo setting)" android:paddingTop="8dp" />
+        <EditText android:id="@+id/lotInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="numberDecimal" android:text="0.01" android:hint="0.01" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Daily loss limit (USD)" android:paddingTop="8dp" />
+        <EditText android:id="@+id/lossLimitInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="numberDecimal" android:text="2.00" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Maximum open EA trades" android:paddingTop="8dp" />
+        <EditText android:id="@+id/maxTradesInput" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="number" android:text="1" />
+        <Button android:id="@+id/startButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="START DEMO TRADING (NOT CONNECTED)" android:enabled="false" android:layout_marginTop="18dp" />
+        <Button android:id="@+id/stopButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="EMERGENCY STOP (NOT CONNECTED)" android:enabled="false" />
+        <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Trades, P/L, win rate and drawdown will appear here after the secure server bridge is implemented. No orders can be placed from this prototype." android:textColor="#475569" android:paddingTop="18dp" android:paddingBottom="18dp" />
+    </LinearLayout>
+</ScrollView>
