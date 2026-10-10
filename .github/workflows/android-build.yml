@@ -13,11 +13,8 @@ permissions:
 jobs:
   build:
     name: Build Android APK
-    runs-on: ubuntu-latest
-
-    defaults:
-      run:
-        shell: bash
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -29,36 +26,79 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Install Android SDK command-line tools
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SDK_ROOT="$HOME/android-sdk"
+          mkdir -p "$SDK_ROOT/cmdline-tools"
+
+          curl -fL \
+            "https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip" \
+            -o /tmp/android-command-line-tools.zip
+
+          mkdir -p /tmp/android-tools
+          unzip -q /tmp/android-command-line-tools.zip -d /tmp/android-tools
+
+          mkdir -p "$SDK_ROOT/cmdline-tools/latest"
+          cp -a /tmp/android-tools/cmdline-tools/. \
+            "$SDK_ROOT/cmdline-tools/latest/"
+
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$SDK_ROOT/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
 
       - name: Install Android SDK packages
+        shell: bash
         run: |
-          sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          set -euo pipefail
+
+          yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses \
+            >/dev/null || true
+
+          sdkmanager --sdk_root="$ANDROID_HOME" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
       - name: Check Android project
+        shell: bash
         working-directory: 233GoldTraderPro_starter/233GoldTraderPro/android
         run: |
-          echo "Checking Android project files..."
-          test -f settings.gradle || test -f settings.gradle.kts
-          test -f app/build.gradle || test -f app/build.gradle.kts
-          test -f app/src/main/AndroidManifest.xml
-          echo "Android project files found."
+          set -euo pipefail
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+          echo "Checking Android project files..."
+
+          test -f app/build.gradle -o -f app/build.gradle.kts
+          test -f settings.gradle -o -f settings.gradle.kts
+
+          find . -maxdepth 2 -type f | sort
+
+      - name: Download Gradle
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          GRADLE_VERSION="8.9"
+
+          curl -fL \
+            "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+            -o /tmp/gradle.zip
+
+          unzip -q /tmp/gradle.zip -d /tmp
+
+          echo "/tmp/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
 
       - name: Build APK
         working-directory: 233GoldTraderPro_starter/233GoldTraderPro/android
+        shell: bash
         run: |
-          if [ -f gradlew ]; then
-            chmod +x gradlew
-            ./gradlew --no-daemon assembleDebug
-          else
-            echo "ERROR: Gradle wrapper is missing."
-            echo "The Android project needs a compatible Gradle wrapper."
-            exit 1
-          fi
+          set -euo pipefail
+
+          gradle --version
+          gradle --no-daemon assembleDebug
 
       - name: Upload APK
         if: success()
