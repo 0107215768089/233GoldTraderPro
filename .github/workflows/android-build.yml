@@ -64,14 +64,32 @@ jobs:
             "build-tools;35.0.0"
 
       - name: Check Android project
+        shell: bash
         working-directory: 233GoldTraderPro_starter/233GoldTraderPro/android
+        run: |
+          set -euo pipefail
+
+          echo "Checking Android project files..."
+
+          test -f app/build.gradle -o -f app/build.gradle.kts
+          test -f settings.gradle -o -f settings.gradle.kts
+
+          find . -maxdepth 2 -type f | sort
+
+      - name: Download Gradle
         shell: bash
         run: |
           set -euo pipefail
-          echo "Checking Android project files..."
-          test -f app/build.gradle -o -f app/build.gradle.kts
-          test -f settings.gradle -o -f settings.gradle.kts
-          find . -maxdepth 2 -type f | sort
+
+          GRADLE_VERSION="8.9"
+
+          curl -fL \
+            "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+            -o /tmp/gradle.zip
+
+          unzip -q /tmp/gradle.zip -d /tmp
+
+          echo "/tmp/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
 
       - name: Build APK
         working-directory: 233GoldTraderPro_starter/233GoldTraderPro/android
@@ -79,14 +97,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ -f gradlew ]; then
-            chmod +x gradlew
-            ./gradlew assembleDebug
-          else
-            echo "ERROR: Gradle wrapper (gradlew) is missing."
-            echo "The Android project needs a Gradle wrapper to build reliably."
-            exit 1
-          fi
+          gradle --version
+          gradle --no-daemon assembleDebug
 
       - name: Upload APK
         if: success()
