@@ -21,9 +21,10 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
+- name: Set up Android SDK
         uses: android-actions/setup-android@v3
-
+        with:
+          packages: ""
       - name: Build APK
         working-directory: 233GoldTraderPro_starter/233GoldTraderPro/android
         run: |
