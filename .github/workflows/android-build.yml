@@ -91,6 +91,51 @@ jobs:
 
           echo "/tmp/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
 
+      - name: Configure Java and Kotlin JVM targets
+        working-directory: 233GoldTraderPro_starter/233GoldTraderPro/android
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          GRADLE_FILE="app/build.gradle"
+          KOTLIN_DSL="false"
+
+          if [ ! -f "$GRADLE_FILE" ]; then
+            GRADLE_FILE="app/build.gradle.kts"
+            KOTLIN_DSL="true"
+          fi
+
+          test -f "$GRADLE_FILE"
+
+          if [ "$KOTLIN_DSL" = "false" ]; then
+            if ! grep -q "sourceCompatibility JavaVersion.VERSION_17" "$GRADLE_FILE"; then
+              if grep -q "sourceCompatibility JavaVersion.VERSION_1_8" "$GRADLE_FILE"; then
+                sed -i 's/sourceCompatibility JavaVersion.VERSION_1_8/sourceCompatibility JavaVersion.VERSION_17/g' "$GRADLE_FILE"
+              fi
+            fi
+
+            if grep -q "targetCompatibility JavaVersion.VERSION_1_8" "$GRADLE_FILE"; then
+              sed -i 's/targetCompatibility JavaVersion.VERSION_1_8/targetCompatibility JavaVersion.VERSION_17/g' "$GRADLE_FILE"
+            fi
+
+            if ! grep -q 'jvmTarget = "17"' "$GRADLE_FILE"; then
+              cat >> "$GRADLE_FILE" <<'EOF'
+
+          tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+          EOF
+            fi
+          else
+            echo "Kotlin DSL detected. No automatic edits made to avoid breaking the existing build script."
+            echo "Please configure Java and Kotlin JVM targets to 17 in app/build.gradle.kts."
+          fi
+
+          echo "Updated Gradle configuration:"
+          cat "$GRADLE_FILE"
+
       - name: Build APK
         working-directory: 233GoldTraderPro_starter/233GoldTraderPro/android
         shell: bash
