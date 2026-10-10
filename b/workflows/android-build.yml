@@ -1,0 +1,155 @@
+name: Build 233GoldTraderPro APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "233GoldTraderPro_starter/233GoldTraderPro/android/**"
+      - ".github/workflows/android-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK command-line tools
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SDK_ROOT="$HOME/android-sdk"
+          mkdir -p "$SDK_ROOT/cmdline-tools"
+
+          curl -fL \
+            "https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip" \
+            -o /tmp/android-command-line-tools.zip
+
+          mkdir -p /tmp/android-tools
+          unzip -q /tmp/android-command-line-tools.zip -d /tmp/android-tools
+
+          mkdir -p "$SDK_ROOT/cmdline-tools/latest"
+          cp -a /tmp/android-tools/cmdline-tools/. \
+            "$SDK_ROOT/cmdline-tools/latest/"
+
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "$SDK_ROOT/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          yes | sdkmanager --sdk_root="$ANDROID_HOME" --licenses \
+            >/dev/null || true
+
+          sdkmanager --sdk_root="$ANDROID_HOME" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+      - name: Check Android project
+        shell: bash
+        working-directory: 233GoldTraderPro_starter/233GoldTraderPro/android
+        run: |
+          set -euo pipefail
+
+          echo "Checking Android project files..."
+
+          test -f app/build.gradle -o -f app/build.gradle.kts
+          test -f settings.gradle -o -f settings.gradle.kts
+
+          find . -maxdepth 2 -type f | sort
+
+      - name: Download Gradle
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          GRADLE_VERSION="8.9"
+
+          curl -fL \
+            "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+            -o /tmp/gradle.zip
+
+          unzip -q /tmp/gradle.zip -d /tmp
+
+          echo "/tmp/gradle-${GRADLE_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Configure Java and Kotlin JVM targets
+        working-directory: 233GoldTraderPro_starter/233GoldTraderPro/android
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          GRADLE_FILE="app/build.gradle"
+          KOTLIN_DSL="false"
+
+          if [ ! -f "$GRADLE_FILE" ]; then
+            GRADLE_FILE="app/build.gradle.kts"
+            KOTLIN_DSL="true"
+          fi
+
+          test -f "$GRADLE_FILE"
+
+          if [ "$KOTLIN_DSL" = "false" ]; then
+            if ! grep -q "sourceCompatibility JavaVersion.VERSION_17" "$GRADLE_FILE"; then
+              if grep -q "sourceCompatibility JavaVersion.VERSION_1_8" "$GRADLE_FILE"; then
+                sed -i 's/sourceCompatibility JavaVersion.VERSION_1_8/sourceCompatibility JavaVersion.VERSION_17/g' "$GRADLE_FILE"
+              fi
+            fi
+
+            if grep -q "targetCompatibility JavaVersion.VERSION_1_8" "$GRADLE_FILE"; then
+              sed -i 's/targetCompatibility JavaVersion.VERSION_1_8/targetCompatibility JavaVersion.VERSION_17/g' "$GRADLE_FILE"
+            fi
+
+            if ! grep -q 'jvmTarget = "17"' "$GRADLE_FILE"; then
+              cat >> "$GRADLE_FILE" <<'EOF'
+
+          tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+              kotlinOptions {
+                  jvmTarget = "17"
+              }
+          }
+          EOF
+            fi
+          else
+            echo "Kotlin DSL detected. No automatic edits made to avoid breaking the existing build script."
+            echo "Please configure Java and Kotlin JVM targets to 17 in app/build.gradle.kts."
+          fi
+
+          echo "Updated Gradle configuration:"
+          cat "$GRADLE_FILE"
+
+      - name: Build APK
+        working-directory: 233GoldTraderPro_starter/233GoldTraderPro/android
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gradle --version
+          gradle --no-daemon assembleDebug
+
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: 233GoldTraderPro-debug-apk
+          path: 233GoldTraderPro_starter/233GoldTraderPro/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
